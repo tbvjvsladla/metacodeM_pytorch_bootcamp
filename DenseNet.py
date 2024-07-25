@@ -160,3 +160,12 @@ def DenseNet201(n_classes=1000, pretrained=False):
         trans_weight = TransWeight(cus_model, pr_model, modul_list)
         trans_weight.transfer_parm()
     return cus_model
+
+
+def DenseNet161(n_classes=1000, pretrained=False):
+    cus_model = DenseNet(block_list=[6, 12, 36, 24], growth_rate=48, n_classes=n_classes)
+    if pretrained:
+        pr_model = models.densenet161(weights=models.DenseNet161_Weights.IMAGENET1K_V1)
+        trans_weight = TransWeight(cus_model, pr_model, modul_list)
+        trans_weight.transfer_parm()
+    return cus_model
