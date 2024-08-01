@@ -2,11 +2,13 @@ import torch
 from tqdm import tqdm  # 훈련 진행상황 체크
 
 class ModelTrainer:
-    def __init__(self, epoch_step, device='cuda', BC_mode=False):
+    def __init__(self, epoch_step, device='cuda', BC_mode=False,
+                        aux=False):
         
         self.epoch_step = epoch_step #tqdm 및 epoch출력정보를 스탭별로
         self.device = device #훈련/검증이 어느 디바이스인지(Default=GPU)
         self.BC_mode = BC_mode #이진분류/다중분류인지?(Default=다중분류)
+        self.aux = aux #모델에 보조분류기(Auxiliary classifier)가 있는지 확인
 
     def model_train(self, model, data_loader, loss_fn,
                     optimizer_fn, epoch,
@@ -32,8 +34,17 @@ class ModelTrainer:
                 label = label.to(self.device).float().unsqueeze(1)
             
             # 전사 과정 수행
-            output = model(image)
-            loss = loss_fn(output, label)
+            if self.aux != True: #보조분류기가 없는 기본모드
+                output = model(image)
+                loss = loss_fn(output, label)
+            else: #보조분류기가 있는 경우
+                outputs = model(image) #여기서 outputs는 튜플임
+                loss = torch.zeros(1).to(self.device)
+                for i, output in enumerate(outputs):
+                    if i == 0:
+                        loss += loss_fn(output, label)
+                    else:
+                        loss += (1 / len(outputs)) * loss_fn(output, label)
 
             #backward과정 수행
             optimizer_fn.zero_grad()
@@ -46,10 +57,16 @@ class ModelTrainer:
 
             # Accuracy 측정 (다중/이진)
             if self.BC_mode != True:
-                pred = output.argmax(dim=1) #예측값의 idx출력
+                if self.aux != True: #보조분류기가 없는 기본모드
+                    pred = output.argmax(dim=1) #예측값의 idx출력
+                else :
+                    pred = outputs[0].argmax(dim=1) #예측값의 idx출력
                 correct += pred.eq(label).sum().item()
             else:
-                pred = torch.sigmoid(output) > 0.5
+                if self.aux != True: #보조분류기가 없는 기본모드
+                    pred = torch.sigmoid(output) > 0.5
+                else:
+                    pred = torch.sigmoid(outputs[0]) > 0.5
                 correct += pred.eq(label).sum().item()
 
             #현재까지 수행한 loss값을 얻어냄
