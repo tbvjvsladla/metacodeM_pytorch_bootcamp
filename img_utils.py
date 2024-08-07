@@ -71,7 +71,7 @@ def deprocess_img(img_tensor, img_shape, normal_val, pad_factor=None):
     patch_side = int(batch_size ** 0.5)
     patch_size = (img_shape[0] // patch_side, img_shape[1] // patch_side)
 
-    patches_tensor = img_tensor
+    patches_tensor = img_tensor.detach() #img_tensor가 그래디언트 추적이 활성화 되어 있으면 중단
     if pad_factor is not None:
         # 반사패딩으로 발생한 crop 비율 계산
         crop_pad = [int(pad_factor[1] / (1+ pad_factor[1]+pad_factor[3]) * tenser_size[0]), #top
