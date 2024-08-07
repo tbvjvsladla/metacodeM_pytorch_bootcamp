@@ -5,6 +5,7 @@ from PIL import Image
 import numpy as np
 
 # 이미지를 받아서 텐서 자료형으로 변환하는 함수
+# pad_factor는 비율값 [0.1, 0.2, 0.3, 0.4]로 넣어야 한다.
 def preprocess_img(img_path, tensor_size, normal_val, 
                    device, pad_factor=None, patch=1):
     assert int(patch ** 0.5) ** 2 == patch, "패치는 제곱수여야 함"
@@ -57,7 +58,7 @@ def preprocess_img(img_path, tensor_size, normal_val,
     # 각 패치별로 transformation을 적용 -> 텐서 자료형변환
     patch_tensors = [transformation(patch) for patch in patches]
     img_tensor = torch.stack(patch_tensors).to(device)
-    # 이렇게 하면 img_tensor의 shape는 (batch_size=patch, 3, 224, 224)가 됨
+    # 이렇게 하면 img_tensor의 shape는 (batch_size=patch, 3, Tensor_size로, Tensor_size로)가 됨
 
     return img_tensor, img_shape
 
